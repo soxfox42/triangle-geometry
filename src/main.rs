@@ -17,7 +17,7 @@ enum State {
 struct Model {
     state: State,
     buf: String,
-    triangle: Vec<f64>,
+    triangle: Vec<f32>,
     has_point: bool,
 }
 
@@ -116,7 +116,17 @@ fn view(app: &App, model: &Model, frame: Frame) {
             .wh(app_rect.wh());
         }
         State::View => {
-            draw.text("Displaying triangle\nPress enter to reset").color(BLACK);
+            draw.text("Displaying triangle\nPress enter to reset")
+                .color(BLACK)
+                .left_justify()
+                .align_text_top()
+                .wh(app_rect.wh());
+
+            draw.tri().points(
+                (model.triangle[0], model.triangle[1]),
+                (model.triangle[2], model.triangle[3]),
+                (model.triangle[4], model.triangle[5]),
+            ).color(BLACK);
         }
     }
 
