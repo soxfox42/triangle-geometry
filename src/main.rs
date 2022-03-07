@@ -74,6 +74,9 @@ fn text_entry(model: &mut Model, ch: char) {
     if ('0'..='9').contains(&ch) {
         model.buf.push(ch);
     }
+    if ch == '-' && model.buf.is_empty() {
+        model.buf.push(ch);
+    }
     if ch == '.' && !model.has_point {
         model.buf.push(ch);
         model.has_point = true;
