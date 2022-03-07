@@ -8,7 +8,14 @@ fn main() {
         .run();
 }
 
+#[derive(PartialEq, Eq)]
+enum State {
+    Entry,
+    View,
+}
+
 struct Model {
+    state: State,
     buf: String,
     triangle: Vec<f64>,
     has_point: bool,
@@ -16,6 +23,7 @@ struct Model {
 
 fn model(_app: &App) -> Model {
     Model {
+        state: State::Entry,
         buf: String::new(),
         triangle: Vec::new(),
         has_point: false,
@@ -29,6 +37,12 @@ fn event(_app: &App, model: &mut Model, event: Event) {
         simple: Some(ev), ..
     } = event
     {
+        if model.state == State::View {
+            if let KeyPressed(Key::Return) = ev {
+                reset(model);
+            }
+            return;
+        }
         match ev {
             KeyPressed(Key::Back) => backspace(model),
             KeyPressed(Key::Return) => submit(model),
@@ -50,11 +64,13 @@ fn submit(model: &mut Model) {
         model.triangle.push(val);
         model.buf.clear();
         model.has_point = false;
+        if model.triangle.len() == 6 {
+            model.state = State::View;
+        }
     }
 }
 
 fn text_entry(model: &mut Model, ch: char) {
-    println!("{}", ch as u32);
     if ('0'..='9').contains(&ch) {
         model.buf.push(ch);
     }
@@ -64,6 +80,20 @@ fn text_entry(model: &mut Model, ch: char) {
     }
 }
 
+fn reset(model: &mut Model) {
+    model.triangle.clear();
+    model.state = State::Entry;
+}
+
+const LABELS: [&str; 6] = [
+    "first X coordinate",
+    "first Y coordinate",
+    "second X coordinate",
+    "second Y coordinate",
+    "third X coordinate",
+    "third Y coordinate",
+];
+
 fn view(app: &App, model: &Model, frame: Frame) {
     frame.clear(WHITE);
 
@@ -71,12 +101,24 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     let draw = app.draw();
 
-    draw.text(&format!("{}\n{:?}", model.buf, model.triangle))
-        .color(BLACK)
-        .font_size(24)
-        .left_justify()
-        .align_text_top()
-        .wh(app_rect.wh());
+    match model.state {
+        State::Entry => {
+            draw.text(&format!(
+                "Enter {}: {}\n{:?}",
+                LABELS[model.triangle.len()],
+                model.buf,
+                model.triangle
+            ))
+            .color(BLACK)
+            .font_size(24)
+            .left_justify()
+            .align_text_top()
+            .wh(app_rect.wh());
+        }
+        State::View => {
+            draw.text("Displaying triangle\nPress enter to reset").color(BLACK);
+        }
+    }
 
     draw.to_frame(app, &frame).unwrap();
 }
