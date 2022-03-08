@@ -1,12 +1,10 @@
 mod calc;
 
+use nannou::glam::Vec3Swizzles;
 use nannou::prelude::*;
 
 fn main() {
-    nannou::app(model)
-        .event(event)
-        .simple_window(view)
-        .run();
+    nannou::app(model).event(event).simple_window(view).run();
 }
 
 #[derive(PartialEq, Eq)]
@@ -102,7 +100,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let window_rect = app.window_rect();
     let top_bar = Rect::from_w_h(window_rect.w(), 150.0).top_left_of(window_rect);
     let top_bar_content = top_bar.pad(20.0);
-    let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h()).below(top_bar).pad(20.0);
+    let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h())
+        .below(top_bar)
+        .pad(20.0);
 
     let draw = app.draw();
 
@@ -142,16 +142,47 @@ fn view(app: &App, model: &Model, frame: Frame) {
             let (translate, scale) = calc::view_transform(tri, draw_rect);
             let draw_transformed = draw.translate(translate).scale(scale);
 
+            // Draw the triangle
             draw_transformed
                 .tri()
-                .points(
-                    (model.triangle[0], model.triangle[1]),
-                    (model.triangle[2], model.triangle[3]),
-                    (model.triangle[4], model.triangle[5]),
-                )
+                .points(tri[0], tri[1], tri[2])
                 .color(Rgba::new(1.0, 0.0, 0.0, 0.5))
                 .stroke(Rgb::new(1.0, 0.0, 0.0))
                 .stroke_weight(5.0 / scale);
+
+            // Draw the triangle points
+            draw_transformed
+                .ellipse()
+                .xy(tri[0])
+                .radius(8.0 / scale)
+                .resolution(16.0)
+                .color(BLACK);
+            draw_transformed
+                .ellipse()
+                .xy(tri[1])
+                .radius(8.0 / scale)
+                .resolution(16.0)
+                .color(BLACK);
+            draw_transformed
+                .ellipse()
+                .xy(tri[2])
+                .radius(8.0 / scale)
+                .resolution(16.0)
+                .color(BLACK);
+
+            // Draw point labels (using manual transform to keep font size)
+            draw.text(&format!("({}, {})", tri[0][0], tri[0][1]))
+                .xy(tri[0] * scale + translate.xy() + Vec2::new(0.0, 20.0))
+                .color(BLACK)
+                .font_size(18);
+            draw.text(&format!("({}, {})", tri[1][0], tri[1][1]))
+                .xy(tri[1] * scale + translate.xy() + Vec2::new(0.0, 20.0))
+                .color(BLACK)
+                .font_size(18);
+            draw.text(&format!("({}, {})", tri[2][0], tri[2][1]))
+                .xy(tri[2] * scale + translate.xy() + Vec2::new(0.0, 20.0))
+                .color(BLACK)
+                .font_size(18);
         }
     }
 
