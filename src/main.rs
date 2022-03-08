@@ -1,8 +1,9 @@
+mod calc;
+
 use nannou::prelude::*;
 
 fn main() {
     nannou::app(model)
-        .update(update)
         .event(event)
         .simple_window(view)
         .run();
@@ -29,8 +30,6 @@ fn model(_app: &App) -> Model {
         has_point: false,
     }
 }
-
-fn update(_app: &App, _model: &mut Model, _update: Update) {}
 
 fn event(_app: &App, model: &mut Model, event: Event) {
     if let Event::WindowEvent {
@@ -103,7 +102,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let window_rect = app.window_rect();
     let top_bar = Rect::from_w_h(window_rect.w(), 150.0).top_left_of(window_rect);
     let top_bar_content = top_bar.pad(20.0);
-    let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h()).below(top_bar);
+    let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h()).below(top_bar).pad(20.0);
 
     let draw = app.draw();
 
@@ -111,10 +110,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .xy(top_bar.xy())
         .wh(top_bar.wh())
         .color(LIGHTGREY);
-    draw.rect()
-        .xy(draw_rect.xy())
-        .wh(draw_rect.wh())
-        .color(RED);
 
     match model.state {
         State::Entry => {
@@ -139,13 +134,24 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 .xy(top_bar_content.xy())
                 .wh(top_bar_content.wh());
 
-            draw.tri()
+            let tri = geom::Tri([
+                Vec2::new(model.triangle[0], model.triangle[1]),
+                Vec2::new(model.triangle[2], model.triangle[3]),
+                Vec2::new(model.triangle[4], model.triangle[5]),
+            ]);
+            let (translate, scale) = calc::view_transform(tri, draw_rect);
+            let draw_transformed = draw.translate(translate).scale(scale);
+
+            draw_transformed
+                .tri()
                 .points(
                     (model.triangle[0], model.triangle[1]),
                     (model.triangle[2], model.triangle[3]),
                     (model.triangle[4], model.triangle[5]),
                 )
-                .color(BLACK);
+                .color(Rgba::new(1.0, 0.0, 0.0, 0.5))
+                .stroke(Rgb::new(1.0, 0.0, 0.0))
+                .stroke_weight(5.0 / scale);
         }
     }
 
