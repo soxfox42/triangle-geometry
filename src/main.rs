@@ -100,36 +100,52 @@ const LABELS: [&str; 6] = [
 fn view(app: &App, model: &Model, frame: Frame) {
     frame.clear(WHITE);
 
-    let app_rect = app.window_rect().pad(20.0);
+    let window_rect = app.window_rect();
+    let top_bar = Rect::from_w_h(window_rect.w(), 150.0).top_left_of(window_rect);
+    let top_bar_content = top_bar.pad(20.0);
+    let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h()).below(top_bar);
 
     let draw = app.draw();
+
+    draw.rect()
+        .xy(top_bar.xy())
+        .wh(top_bar.wh())
+        .color(LIGHTGREY);
+    draw.rect()
+        .xy(draw_rect.xy())
+        .wh(draw_rect.wh())
+        .color(RED);
 
     match model.state {
         State::Entry => {
             draw.text(&format!(
-                "Enter {}: {}\n{:?}",
+                "Enter {}: {}",
                 LABELS[model.triangle.len()],
-                model.buf,
-                model.triangle
+                model.buf
             ))
             .color(BLACK)
             .font_size(24)
             .left_justify()
             .align_text_top()
-            .wh(app_rect.wh());
+            .xy(top_bar_content.xy())
+            .wh(top_bar_content.wh());
         }
         State::View => {
-            draw.text("Displaying triangle\nPress enter to reset")
+            draw.text("Press ENTER to reset.")
                 .color(BLACK)
+                .font_size(24)
                 .left_justify()
                 .align_text_top()
-                .wh(app_rect.wh());
+                .xy(top_bar_content.xy())
+                .wh(top_bar_content.wh());
 
-            draw.tri().points(
-                (model.triangle[0], model.triangle[1]),
-                (model.triangle[2], model.triangle[3]),
-                (model.triangle[4], model.triangle[5]),
-            ).color(BLACK);
+            draw.tri()
+                .points(
+                    (model.triangle[0], model.triangle[1]),
+                    (model.triangle[2], model.triangle[3]),
+                    (model.triangle[4], model.triangle[5]),
+                )
+                .color(BLACK);
         }
     }
 
