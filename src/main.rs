@@ -114,7 +114,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     match model.state {
         State::Entry => {
             draw.text(&format!(
-                "Enter {}: {}",
+                "Enter {}: {}_",
                 LABELS[model.triangle.len()],
                 model.buf
             ))
