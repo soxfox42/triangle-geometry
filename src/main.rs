@@ -2,6 +2,10 @@ mod calc;
 
 use nannou::glam::Vec3Swizzles;
 use nannou::prelude::*;
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::process;
 
 fn main() {
     nannou::app(model).event(event).simple_window(view).run();
@@ -13,19 +17,46 @@ enum State {
     View,
 }
 
-struct Model {
-    state: State,
-    buf: String,
-    triangle: Vec<f32>,
-    has_point: bool,
+enum Model {
+    Interactive {
+        state: State,
+        buf: String,
+        triangle: Vec<f32>,
+        has_point: bool,
+    },
+    File {
+        reader: BufReader<File>,
+        triangle: Vec<f32>,
+    },
 }
 
 fn model(_app: &App) -> Model {
-    Model {
-        state: State::Entry,
-        buf: String::new(),
-        triangle: Vec::new(),
-        has_point: false,
+    let mut args = env::args();
+    if args.len() > 2 {
+        eprintln!("Usage: {} [input_file]", args.next().unwrap());
+        process::exit(1);
+    }
+    if args.len() == 2 {
+        let path = args.skip(1).next().unwrap();
+        if let Ok(file) = File::open(&path) {
+            let reader = BufReader::new(file);
+            let mut model = Model::File {
+                reader,
+                triangle: Vec::new(),
+            };
+            step(&mut model);
+            model
+        } else {
+            eprintln!("File not found: {}", path);
+            process::exit(1);
+        }
+    } else {
+        Model::Interactive {
+            state: State::Entry,
+            buf: String::new(),
+            triangle: Vec::new(),
+            has_point: false,
+        }
     }
 }
 
@@ -34,55 +65,98 @@ fn event(_app: &App, model: &mut Model, event: Event) {
         simple: Some(ev), ..
     } = event
     {
-        if model.state == State::View {
-            if let KeyPressed(Key::Return) = ev {
-                reset(model);
+        match model {
+            Model::File { .. } => {
+                if let KeyPressed(Key::Return) = ev {
+                    step(model);
+                }
             }
-            return;
+            Model::Interactive {
+                state: State::Entry,
+                ..
+            } => match ev {
+                KeyPressed(Key::Back) => backspace(model),
+                KeyPressed(Key::Return) => submit(model),
+                ReceivedCharacter(ch) => text_entry(model, ch),
+                _ => (),
+            },
+            Model::Interactive {
+                state: State::View, ..
+            } => {
+                if let KeyPressed(Key::Return) = ev {
+                    reset(model);
+                }
+            }
         }
-        match ev {
-            KeyPressed(Key::Back) => backspace(model),
-            KeyPressed(Key::Return) => submit(model),
-            ReceivedCharacter(ch) => text_entry(model, ch),
-            _ => (),
+    }
+}
+
+fn step(model: &mut Model) {
+    if let Model::File { reader, triangle } = model {
+        let mut line = String::new();
+        reader.read_line(&mut line).unwrap();
+        if line.is_empty() {
+            process::exit(0);
         }
+        *triangle = line
+            .trim()
+            .split(',')
+            .map(|x| x.parse().expect("Invalid triangle data"))
+            .collect();
     }
 }
 
 fn backspace(model: &mut Model) {
-    let popped = model.buf.pop();
-    if let Some('.') = popped {
-        model.has_point = false;
+    if let Model::Interactive { buf, has_point, .. } = model {
+        let popped = buf.pop();
+        if let Some('.') = popped {
+            *has_point = false;
+        }
     }
 }
 
 fn submit(model: &mut Model) {
-    if let Ok(val) = model.buf.parse() {
-        model.triangle.push(val);
-        model.buf.clear();
-        model.has_point = false;
-        if model.triangle.len() == 6 {
-            model.state = State::View;
+    if let Model::Interactive {
+        buf,
+        triangle,
+        state,
+        has_point,
+    } = model
+    {
+        if let Ok(val) = buf.parse() {
+            triangle.push(val);
+            buf.clear();
+            *has_point = false;
+            if triangle.len() == 6 {
+                *state = State::View;
+            }
         }
     }
 }
 
 fn text_entry(model: &mut Model, ch: char) {
-    if ('0'..='9').contains(&ch) {
-        model.buf.push(ch);
-    }
-    if ch == '-' && model.buf.is_empty() {
-        model.buf.push(ch);
-    }
-    if ch == '.' && !model.has_point {
-        model.buf.push(ch);
-        model.has_point = true;
+    if let Model::Interactive { buf, has_point, .. } = model {
+        if ('0'..='9').contains(&ch) {
+            buf.push(ch);
+        }
+        if ch == '-' && buf.is_empty() {
+            buf.push(ch);
+        }
+        if ch == '.' && !*has_point {
+            buf.push(ch);
+            *has_point = true;
+        }
     }
 }
 
 fn reset(model: &mut Model) {
-    model.triangle.clear();
-    model.state = State::Entry;
+    if let Model::Interactive {
+        triangle, state, ..
+    } = model
+    {
+        triangle.clear();
+        *state = State::Entry;
+    }
 }
 
 const LABELS: [&str; 6] = [
@@ -111,22 +185,28 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .wh(top_bar.wh())
         .color(LIGHTGREY);
 
-    match model.state {
-        State::Entry => {
-            draw.text(&format!(
-                "Enter {}: {}_",
-                LABELS[model.triangle.len()],
-                model.buf
-            ))
-            .color(BLACK)
-            .font_size(24)
-            .left_justify()
-            .align_text_top()
-            .xy(top_bar_content.xy())
-            .wh(top_bar_content.wh());
+    match model {
+        Model::Interactive {
+            state: State::Entry,
+            triangle,
+            buf,
+            ..
+        } => {
+            draw.text(&format!("Enter {}: {}_", LABELS[triangle.len()], buf))
+                .color(BLACK)
+                .font_size(24)
+                .left_justify()
+                .align_text_top()
+                .xy(top_bar_content.xy())
+                .wh(top_bar_content.wh());
         }
-        State::View => {
-            draw.text("Press ENTER to reset.")
+        Model::Interactive {
+            state: State::View,
+            triangle,
+            ..
+        }
+        | Model::File { triangle, .. } => {
+            draw.text("Press ENTER to continue.")
                 .color(BLACK)
                 .font_size(24)
                 .left_justify()
@@ -135,9 +215,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 .wh(top_bar_content.wh());
 
             let tri = geom::Tri([
-                Vec2::new(model.triangle[0], model.triangle[1]),
-                Vec2::new(model.triangle[2], model.triangle[3]),
-                Vec2::new(model.triangle[4], model.triangle[5]),
+                Vec2::new(triangle[0], triangle[1]),
+                Vec2::new(triangle[2], triangle[3]),
+                Vec2::new(triangle[4], triangle[5]),
             ]);
             let (translate, scale) = calc::view_transform(tri, draw_rect);
             let draw_transformed = draw.translate(translate).scale(scale);
