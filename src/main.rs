@@ -160,12 +160,12 @@ fn reset(model: &mut Model) {
 }
 
 const LABELS: [&str; 6] = [
-    "first X coordinate",
-    "first Y coordinate",
-    "second X coordinate",
-    "second Y coordinate",
-    "third X coordinate",
-    "third Y coordinate",
+    "point A's X coordinate",
+    "point A's Y coordinate",
+    "point B's X coordinate",
+    "point B's Y coordinate",
+    "point C's X coordinate",
+    "point C's Y coordinate",
 ];
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -176,7 +176,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let top_bar_content = top_bar.pad(20.0);
     let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h())
         .below(top_bar)
-        .pad(20.0);
+        .pad(50.0);
 
     let draw = app.draw();
 
