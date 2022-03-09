@@ -173,7 +173,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     let window_rect = app.window_rect();
     let top_bar = Rect::from_w_h(window_rect.w(), 150.0).top_left_of(window_rect);
-    let top_bar_content = top_bar.pad(20.0);
+    let top_bar_content = top_bar.pad(15.0);
     let draw_rect = Rect::from_w_h(window_rect.w(), window_rect.h() - top_bar.h())
         .below(top_bar)
         .pad(50.0);
@@ -214,16 +214,17 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
             let (ab, bc, ca) = calc::line_segments(tri);
             draw.text(&format!(
-                "Segment Lengths: AB={:.3} BC={:.3} CA={:.3}\nArea={:.3} Perimeter={:.3}",
+                "Segment Lengths: AB={:.3} BC={:.3} CA={:.3}\nArea={:.3} Perimeter={:.3}\nType: {}\nPress ENTER to continue.",
                 ab,
                 bc,
                 ca,
                 calc::area(tri),
-                calc::perimeter(tri)
+                calc::perimeter(tri),
+                calc::classify(tri),
             ))
             .color(BLACK)
             .font_size(24)
-            .line_spacing(10.0)
+            .line_spacing(5.0)
             .left_justify()
             .align_text_top()
             .xy(top_bar_content.xy())
