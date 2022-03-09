@@ -251,15 +251,15 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 .color(BLACK);
 
             // Draw point labels (using manual transform to keep font size)
-            draw.text(&format!("({}, {})", tri[0][0], tri[0][1]))
+            draw.text(&format!("A: ({}, {})", tri[0][0], tri[0][1]))
                 .xy(tri[0] * scale + translate.xy() + Vec2::new(0.0, 20.0))
                 .color(BLACK)
                 .font_size(18);
-            draw.text(&format!("({}, {})", tri[1][0], tri[1][1]))
+            draw.text(&format!("B: ({}, {})", tri[1][0], tri[1][1]))
                 .xy(tri[1] * scale + translate.xy() + Vec2::new(0.0, 20.0))
                 .color(BLACK)
                 .font_size(18);
-            draw.text(&format!("({}, {})", tri[2][0], tri[2][1]))
+            draw.text(&format!("C: ({}, {})", tri[2][0], tri[2][1]))
                 .xy(tri[2] * scale + translate.xy() + Vec2::new(0.0, 20.0))
                 .color(BLACK)
                 .font_size(18);
