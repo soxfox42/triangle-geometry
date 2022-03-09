@@ -206,19 +206,29 @@ fn view(app: &App, model: &Model, frame: Frame) {
             ..
         }
         | Model::File { triangle, .. } => {
-            draw.text("Press ENTER to continue.")
-                .color(BLACK)
-                .font_size(24)
-                .left_justify()
-                .align_text_top()
-                .xy(top_bar_content.xy())
-                .wh(top_bar_content.wh());
-
             let tri = geom::Tri([
                 Vec2::new(triangle[0], triangle[1]),
                 Vec2::new(triangle[2], triangle[3]),
                 Vec2::new(triangle[4], triangle[5]),
             ]);
+
+            let (ab, bc, ca) = calc::line_segments(tri);
+            draw.text(&format!(
+                "Segment Lengths: AB={:.3} BC={:.3} CA={:.3}\nArea={:.3} Perimeter={:.3}",
+                ab,
+                bc,
+                ca,
+                calc::area(tri),
+                calc::perimeter(tri)
+            ))
+            .color(BLACK)
+            .font_size(24)
+            .line_spacing(10.0)
+            .left_justify()
+            .align_text_top()
+            .xy(top_bar_content.xy())
+            .wh(top_bar_content.wh());
+
             let (translate, scale) = calc::view_transform(tri, draw_rect);
             let draw_transformed = draw.translate(translate).scale(scale);
 
