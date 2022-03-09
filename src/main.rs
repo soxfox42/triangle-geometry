@@ -8,7 +8,7 @@ use std::io::{BufRead, BufReader};
 use std::process;
 
 fn main() {
-    nannou::app(model).event(event).simple_window(view).run();
+    nannou::app(model).event(event).run();
 }
 
 #[derive(PartialEq, Eq)]
@@ -30,7 +30,14 @@ enum Model {
     },
 }
 
-fn model(_app: &App) -> Model {
+fn model(app: &App) -> Model {
+    app.new_window()
+        .view(view)
+        .title("Triangle Geometry")
+        .size(1024, 768)
+        .build()
+        .unwrap();
+
     let mut args = env::args();
     if args.len() > 2 {
         eprintln!("Usage: {} [input_file]", args.next().unwrap());
